@@ -39,6 +39,19 @@ function get_custom_extensions()
 	done
 }
 
+
+function get_user_custom_extensions()
+{
+	config_file=$1
+	
+	#extensions=`xmllint --xpath '/hybrisconfig/extensions/extension[@dir]/@name' $config_file | sed 's/name="\([^"]*\)"/\1/g'`
+	extensions=`xmllint --xpath '/hybrisconfig/extensions/extension[contains(@dir,"custom")]/@dir' $config_file | sed 's/dir="\([^"]*\)"/\1/g'`
+	for ext in $extensions
+	do
+		echo $ext | sed -e 's#.*/\([^/]*\)$#\1#g'
+	done
+}
+
 function get_ext_path()
 {
 	ext=$1
@@ -92,6 +105,17 @@ function build_graph_file()
 	
 	# give the custom extensions a different background color
 	for ext in $custom_extensions; do
+		echo -e "\t$ext [style=filled,color=black,fillcolor=lightblue]" >> $dotfile
+	done
+	# add custom extensions to the graph
+	user_extensions=`get_user_custom_extensions $config_file`
+	for ext in $user_extensions; do
+		echo "--> getting extension dependencies for $ext"
+		get_dependencies_for_ext $ext $hybris_dir >> $dotfile
+	done
+	
+	# give the custom extensions a different background color
+	for ext in $user_extensions; do
 		echo -e "\t$ext [style=filled,color=black,fillcolor=lightblue]" >> $dotfile
 	done
 
